@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'backend',
     'rest_framework',
+    'django_celery_beat',
 ]
 
 MIDDLEWARE = [
@@ -88,7 +89,7 @@ DATABASES = {
       'NAME': os.getenv('NAME'),
       'USER': os.getenv('USER'),
       'PASSWORD': os.getenv('PASSWORD'),
-      'HOST': 'localhost',
+      'HOST': 'db',
       'PORT': 5432,
       'CONN_MAX_AGE': 0,
       'ENGINE': 'django.db.backends.postgresql_psycopg2'
@@ -136,3 +137,10 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+CELERY_BROKER_URL = 'amqp://rabbitmq'
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+
+CELERY_TIMEZONE = 'UTC'

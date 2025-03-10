@@ -3,10 +3,10 @@ version: '3.8'
 services:
   django:
     build: .
-    container_name: django
-    command: python manage.py runserver 0.0.0.0:8000
+    container_name: django-2
+    command: sh -c "cd /task_flow && python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
     volumes:
-      - ./task_flow:/app/task_flow
+      - ./task_flow:/task_flow
     ports:
       - 8000:8000
     depends_on:
@@ -15,7 +15,7 @@ services:
 
   db:
     image: postgres:14
-    container_name: task_flow-db-1
+    container_name: task_flow-db-2
     restart: always
     environment:
       POSTGRES_DB: tasks_db
@@ -28,3 +28,29 @@ services:
       interval: 5s
       retries: 5
       timeout: 3s
+  rabbitmq:
+    image: "rabbitmq:3-management"
+    container_name: task_flow-rabbitmq
+    hostname: rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+
+  celery:
+    build: .
+    command: celery worker --app=task_flow.tasks
+    volumes:
+      - .:/task_flow
+    links:
+      - rabbitmq:rabbit
+
+  celery-beat:
+    build: .
+    container_name: task_flow-celery-beat
+    command: celery --app=task_flow.celery beat --loglevel=info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    depends_on:
+      - django
+      - rabbitmq
