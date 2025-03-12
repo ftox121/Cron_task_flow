@@ -1,5 +1,6 @@
 from django.shortcuts import render
 from rest_framework import generics, permissions
+from rest_framework.permissions import IsAuthenticated
 
 from backend.models import Task, ExecutionLog
 from backend.serializers import TaskSerializer, ExecutionLogSerializer
@@ -9,6 +10,7 @@ class CreateTaskView(generics.ListCreateAPIView):
     """Список и создание задач """
     queryset = Task.objects.all()
     serializer_class = TaskSerializer
+    permission_classes = [IsAuthenticated]
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
