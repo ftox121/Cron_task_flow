@@ -13,3 +13,4 @@ class TaskAdmin(admin.ModelAdmin):
 class ExecutionLogAdmin(admin.ModelAdmin):
     list_display = ('id', 'task', 'status', 'executed_at')
     search_fields = ('task__name',)
+

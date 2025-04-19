@@ -16,6 +16,7 @@ class Task(models.Model):
     cron_expression = models.CharField(max_length=50, verbose_name='Cron-выражение')
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, verbose_name='Статус')
     user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name='Пользователь')
+    is_active = models.BooleanField(default=True, verbose_name='Активна')
 
     def __str__(self):
         return f'{self.name} ({self.cron_expression})'

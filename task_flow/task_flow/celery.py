@@ -12,8 +12,8 @@ app.config_from_object('django.conf:settings', namespace='CELERY')
 app.autodiscover_tasks()
 
 app.conf.beat_schedule = {
-    'backup-database-every-day': {
-        'task': 'backend.tasks.backup_database',
-        'schedule': crontab(minute=0, hour=0),
+    'check-tasks-every-minute': {
+        'task': 'backend.tasks.check_and_run_tasks',
+        'schedule': crontab(minute='*'),
     },
 }
