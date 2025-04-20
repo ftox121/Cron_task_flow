@@ -1,5 +1,6 @@
 from django.contrib.auth import get_user_model
 from django.db import models
+from django_celery_beat.models import PeriodicTask
 
 User = get_user_model()
 
@@ -17,6 +18,7 @@ class Task(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, verbose_name='Статус')
     user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name='Пользователь')
     is_active = models.BooleanField(default=True, verbose_name='Активна')
+    periodic_task = models.OneToOneField(PeriodicTask, null=True,related_name="tasks", blank=True, on_delete=models.SET_NULL)
 
     def __str__(self):
         return f'{self.name} ({self.cron_expression})'
@@ -35,3 +37,11 @@ class ExecutionLog(models.Model):
 
     def __str__(self):
         return f'Execution a {self.task.name} at {self.executed_at}'
+
+
+
+class TaskStatus(models.Model):
+    task_name = models.CharField(max_length=255)
+    status = models.CharField(max_length=50)
+    timestamp = models.DateTimeField(auto_now_add=True)
+    result = models.TextField(null=True, blank=True)

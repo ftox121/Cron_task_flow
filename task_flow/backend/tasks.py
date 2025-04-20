@@ -2,7 +2,7 @@ from celery import shared_task
 from croniter import croniter
 from django.core.mail import send_mail
 
-from .models import Task, ExecutionLog
+from .models import Task, ExecutionLog, TaskStatus
 from datetime import datetime
 import pytz
 
@@ -37,13 +37,16 @@ def check_and_run_tasks():
 
 @shared_task
 def send_daily_newsletter():
-    from django.core.mail import send_mail
+    TaskStatus.objects.create(task_name="send_daily_newsletter", status="running")
+
     from django.contrib.auth.models import User
     subject = "Ежедневное обновление"
     message = "Привет! Вот ваше обновление на сегодня."
     for user in User.objects.all():
         send_mail(subject, message, 'admin@example.com', [user.email])
-    print("Ежедневные уведомления отправлены.")
+
+    TaskStatus.objects.filter(task_name="send_daily_newsletter").update(status="completed",
+                                                                        result="Уведомления отправлены")
 
 
 @shared_task
