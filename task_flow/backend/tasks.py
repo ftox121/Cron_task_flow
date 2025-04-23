@@ -75,3 +75,11 @@ def clear_cache():
     from django.core.cache import cache
     cache.clear()
     print("Кэш очищен.")
+
+
+import datetime
+
+@shared_task
+def execute_custom_task(task_id):
+    print(f"[{datetime.datetime.now()}] Задача {task_id} выполнена.")
+    return f"Task {task_id} executed at {datetime.datetime.now()}"
