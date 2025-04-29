@@ -1,4 +1,4 @@
-from django.db.models.signals import post_save
+from django.db.models.signals import post_save, pre_delete
 from django.dispatch import receiver
 from django_celery_beat.models import PeriodicTask, CrontabSchedule
 from .models import Task
@@ -6,17 +6,13 @@ import json
 
 
 @receiver(post_save, sender=Task)
-def create_periodic_task(sender, instance, created, **kwargs):
-    if not created:
-        return
-
-    # Разбираем cron выражение
+def sync_periodic_task(sender, instance, created, **kwargs):
     cron_parts = instance.cron_expression.split()
     if len(cron_parts) != 5:
         print("Неверное cron выражение")
         return
 
-    # Создаем или получаем расписание
+    # Создаём или обновляем расписание
     schedule, _ = CrontabSchedule.objects.get_or_create(
         minute=cron_parts[0],
         hour=cron_parts[1],
@@ -25,11 +21,26 @@ def create_periodic_task(sender, instance, created, **kwargs):
         day_of_week=cron_parts[4],
     )
 
-    # Создаем PeriodicTask
-    PeriodicTask.objects.create(
-        crontab=schedule,
-        name=f'task-{instance.id}',
-        task='backend.tasks.execute_custom_task',  # Имя твоей Celery задачи
-        args=json.dumps([instance.id]),
-        enabled=instance.is_active
-    )
+    # Если задача уже была создана (не created), обновляем её
+    if not created and instance.periodic_task:
+        periodic_task = instance.periodic_task
+        periodic_task.crontab = schedule
+        periodic_task.enabled = instance.is_active
+        periodic_task.save()
+    else:
+        # Создаём новую PeriodicTask и привязываем к Task
+        periodic_task = PeriodicTask.objects.create(
+            crontab=schedule,
+            name=f'task-{instance.id}-{instance.name}',
+            task='backend.tasks.execute_custom_task',
+            args=json.dumps([instance.id]),
+            enabled=instance.is_active,
+        )
+        instance.periodic_task = periodic_task
+        instance.save()  # Важно: сохраняем связь
+
+
+@receiver(pre_delete, sender=Task)
+def delete_periodic_task(sender, instance, **kwargs):
+    if instance.periodic_task:
+        instance.periodic_task.delete()

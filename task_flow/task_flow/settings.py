@@ -202,4 +202,4 @@ EMAIL_USE_TLS = True
 EMAIL_HOST_USER = 'lstaeee@mail.ru'
 EMAIL_HOST_PASSWORD = 'Nbveh1775'
 
-DEFAULT_FROM_EMAIL = 'lstaeee@mail.ru'
+CELERY_RESULT_BACKEND = 'rabbitmq'

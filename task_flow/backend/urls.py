@@ -1,29 +1,37 @@
-from django.urls import path
+from django.urls import path, include
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+from rest_framework.routers import DefaultRouter
+
 from .views import (
-    CheckAndRunTasksView,
-    SendDailyNewsletterView,
-    BackupDatabaseView,
-    CheckInactiveUsersView,
-    ClearCacheView
+    TaskViewSet,
+    ExecutionLogViewSet,
+    SystemTasksAPIView,
+    TaskStatsAPIView,
+    PeriodicTaskViewSet
 )
-from backend.views import TaskViewSet, DetailView, ExecutionLogListView
+
+router = DefaultRouter()
+router.register(r'tasks', TaskViewSet, basename='task')
+router.register(r'logs', ExecutionLogViewSet, basename='log')
+router.register(r'periodic-tasks', PeriodicTaskViewSet, basename='periodictask')
 
 urlpatterns = [
-    path('tasks/', TaskViewSet.as_view({'get': 'list', 'post': 'create'}), name='task_list'),
-    path('tasks/<int:pk>/', TaskViewSet.as_view({'get': 'retrieve', 'put': 'update', 'delete': 'destroy'}),
-         name='task_detail'),
-    path('logs/', ExecutionLogListView.as_view(), name='log-list'),
+    # JWT Authentication
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+
+    # API Documentation
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
     path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='docs'),
 
-    path('check-and-run-tasks/', CheckAndRunTasksView.as_view(), name='check-and-run-tasks'),
-    path('send-daily-newsletter/', SendDailyNewsletterView.as_view(), name='send-daily-newsletter'),
-    path('backup-database/', BackupDatabaseView.as_view(), name='backup-database'),
-    path('check-inactive-users/', CheckInactiveUsersView.as_view(), name='check-inactive-users'),
-    path('clear-cache/', ClearCacheView.as_view(), name='clear-cache'),
+    # System Tasks
+    path('system-tasks/<str:task_name>/', SystemTasksAPIView.as_view(), name='system-task'),
+    path('system-tasks/', SystemTasksAPIView.as_view(), name='system-tasks-list'),
 
+    # Statistics
+    path('stats/', TaskStatsAPIView.as_view(), name='task-stats'),
+
+    # Включаем URLs из router
+    path('', include(router.urls)),
 ]
